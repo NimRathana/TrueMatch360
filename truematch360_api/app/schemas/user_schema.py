@@ -1,0 +1,182 @@
+
+from pydantic import BaseModel, ConfigDict
+from typing import Optional, List, Union
+from datetime import datetime, date
+from typing import Optional
+
+
+# ===== UserSession =====
+class UserSessionBase(BaseModel):
+    access_token: str
+    token_expired: datetime
+    session_creation_date: datetime
+    
+
+class UserSessionCreate(UserSessionBase):
+    user_id: int
+
+class UserSessionResponse(UserSessionBase):
+    pk_id: int
+    user_id: int
+    model_config = ConfigDict(from_attributes=True)
+
+# ===== User =====
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+class UserCreate(BaseModel):
+    pk_id: Optional[int] = None
+    user_name: str
+    email: str
+    password: str
+    user_type: int
+    gender: Optional[str] = None
+    phone: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    address: Optional[str] = None
+    is_active: bool = True
+    experience_level: Optional[str] = None
+    min_monthly_salary: Optional[str] = None
+    jobCategoryId: Optional[Union[int, str]] = None
+
+    model_config = ConfigDict(exclude_none=False)
+
+class UpdateUserProfile(BaseModel):
+    pk_id: Optional[int] = None
+    user_name: str
+    email: Optional[str] = None
+    gender: Optional[str] = None
+    phone: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    address: Optional[str] = None
+
+    model_config = ConfigDict(exclude_none=False)
+
+class UserResponse(BaseModel):
+    pk_id: int
+    user_name: str
+    email: str
+    user_type: int
+    profile_image: Optional[str] = None
+    gender: Optional[str] = None
+    phone: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    address: Optional[str] = None
+    is_active: bool
+    approved: Optional[bool] = None
+    created_date: datetime
+    updated_date: Optional[datetime]
+
+    model_config = ConfigDict(from_attributes=True)
+
+class UserResponseData(BaseModel):
+    pk_id: int
+    user_name: str
+    email: str
+    model_config = ConfigDict(from_attributes=True)
+
+class AccessToken(BaseModel):
+    access_token: str
+    user_type: int
+    pk_id: int
+    user_name: str
+    email: str
+    address: Optional[str] = None
+    phone: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    gender: Optional[str] = None
+    user_data: Optional[UserResponse] = None
+    wrong_password: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DeleteUser(BaseModel):
+    ids: List[int]
+
+class SelectClinic(BaseModel):
+    access_token: str
+    clinic_id: int
+
+
+class ChangePassword(BaseModel):
+    old_password: str
+    new_password: str
+
+class ResponseSingleUserProfile(BaseModel):
+    pk_id: int
+    user_name: str
+    profile_image: Optional[str]
+    email: str
+    phone: Optional[str]
+    date_of_birth: Optional[date]
+    gender: Optional[str]
+    address: Optional[str]
+
+class EmployerCategoryResponse(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        from_attributes = True
+
+class ResponseUserProfile(BaseModel):
+    pk_id: int
+    user_name: str
+    profile_image: Optional[str]
+    email: str
+    phone: Optional[str]
+    date_of_birth: Optional[date]
+    gender: Optional[str]
+    address: Optional[str]
+
+    company_name: Optional[str]
+    company_email: Optional[str]
+    company_contact: Optional[str]
+    company_address: Optional[str]
+    company_description: Optional[str]
+    company_website: Optional[str]
+    company_logo: Optional[str]
+    categories: List[EmployerCategoryResponse] = []
+
+    class Config:
+        from_attributes = True
+
+class UpdateHospital(BaseModel):
+    id: int
+    code: str
+    clinic_type_id: int
+    name: str
+    address: str
+    phone: str
+    email: str
+    opening_hours: str
+    description: Optional[str] = None
+
+
+class UpdateProfile(BaseModel):
+    id: int
+    user_name: str
+    email: str
+    phone: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    gender: Optional[str] = None
+
+
+class JobOut(BaseModel):
+    pk_id: int
+    job_title: str
+    job_type: str
+    level: Optional[str]
+    position_number: Optional[int]
+    salary_range: Optional[str]
+    location: Optional[str]
+    job_description: str
+    posting_date: datetime
+    closing_date: Optional[datetime]
+    status: str          # ✅ string, not bool
+    created_at: datetime
+    company_name: str
+    company_logo: Optional[str] = None
+    

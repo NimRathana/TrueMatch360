@@ -1,0 +1,81 @@
+#job_schema.py
+from pydantic import BaseModel, ConfigDict, Field
+from typing import List, Optional
+from datetime import date, datetime
+from app.models.job_model import JobLevel, JobType, JobStatus
+from app.schemas.job_application_schema import JobApplicationOut
+
+
+class JobCreate(BaseModel):
+    job_title: str = Field(..., min_length=3, max_length=255)
+    job_type: JobType
+    category_ids: List[int] = Field(default_factory=list, description="List of category IDs")
+    level: JobLevel = JobLevel.MID_LEVEL
+    position_number: Optional[int] = None
+    salary_range: Optional[str] = Field(None, max_length=100)
+    location: Optional[str] = Field(None, max_length=255)
+    job_description: str
+    experience_required: str
+    closing_date: Optional[datetime] = None
+    status: Optional[JobStatus] = JobStatus.OPEN
+
+
+class JobUpdate(BaseModel):
+    job_title: Optional[str] = Field(None, min_length=3, max_length=255)
+    job_type: Optional[JobType] = None
+    category_ids: Optional[List[int]] = None
+    level: Optional[JobLevel] = None
+    position_number: Optional[int] = None
+    salary_range: Optional[str] = Field(None, max_length=100)
+    location: Optional[str] = Field(None, max_length=255)
+    job_description: Optional[str] = None
+    experience_required: Optional[str] = None
+    closing_date: Optional[datetime] = None
+    status: Optional[JobStatus] = None
+
+class EmployerBasic(BaseModel):
+    pk_id: int
+    company_name: str
+    company_logo: Optional[str] = None
+    company_address: Optional[str] = None
+    company_contact: Optional[str] = None
+    company_email: Optional[str] = None
+    company_website: Optional[str] = None
+    company_description: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+class CategoryBasic(BaseModel):
+    pk_id: int
+    name: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class JobOut(BaseModel):
+    pk_id: int
+    employer_id: int
+    employer: EmployerBasic
+    job_title: str
+    job_type: JobType
+    categories: List[CategoryBasic] = []
+    level: JobLevel
+    position_number: Optional[int]
+    salary_range: Optional[str]
+    location: Optional[str]
+    job_description: str
+    experience_required: str
+    posting_date: date
+    closing_date: Optional[date]
+    status: JobStatus
+    created_at: datetime
+    applications: List[JobApplicationOut] = []
+
+    model_config = {"from_attributes": True}
+
+class Approved(BaseModel):
+    approved: bool
+
+class MyJobsResponse(BaseModel):
+    jobs: List[JobOut]
+    approved: bool

@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: ./api-application
+      dockerfile: Dockerfile
+    ports:
+      - "${API_PORT}:${DB_INTERNAL_PORT}"  # Map API port
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    depends_on:
+      - db
+    restart: unless-stopped
+    networks:
+      - backend
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${DB_PORT}:${DB_INTERNAL_PORT}"  # Map Postgres port
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - backend
+
+  admin:
+    build:
+      context: ./recruitment-admin-application
+      dockerfile: Dockerfile
+    ports:
+      - "${ADMIN_PORT}:${ADMIN_PORT}"  # Map Admin frontend port
+    restart: unless-stopped
+    networks:
+      - backend
+
+volumes:
+  postgres_data:
+
+networks:
+  backend:
+    driver: bridge

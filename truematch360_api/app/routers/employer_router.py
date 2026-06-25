@@ -1,0 +1,141 @@
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form, Request
+from sqlalchemy.orm import Session
+from typing import List, Optional
+from app.dependencies.auth import verify_access_token
+from app.schemas.user_schema import  UserResponse
+
+from app.database.deps import get_db
+from app.schemas.employer_schema import EmployerCreate, EmployerUpdate, EmployerOut, UserProfileEmployer, UserUpdateProfile
+from app.controllers.employer_controller import create_employer, get_employer, get_employers, update_employer, delete_employer, get_employer_profiles, update_profile_employer, delete_company_logo
+
+router = APIRouter(prefix="/employer", tags=["Employers"])
+
+@router.post("/", response_model=EmployerOut)
+def api_create_employer(
+    company_name: str = Form(...),
+    company_email: Optional[str] = Form(None),
+    company_contact: Optional[str] = Form(None),
+    company_address: Optional[str] = Form(None),
+    company_description: Optional[str] = Form(None),
+    company_website: Optional[str] = Form(None),
+    company_logo: UploadFile = File(None),
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(verify_access_token)
+):
+    employer_data = EmployerCreate(
+        user_id=current_user_id,
+        company_name=company_name,
+        company_email=company_email,
+        company_contact=company_contact,
+        company_address=company_address,
+        company_description=company_description,
+        company_website=company_website,
+    )
+    return create_employer(db, employer_data, company_logo)
+
+@router.get("/", response_model=List[EmployerOut])
+def api_get_employers(db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
+    return get_employers(db)
+
+@router.get("/{employer_id}", response_model=EmployerOut)
+def api_get_employer(employer_id: int, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
+    db_employer = get_employer(db, employer_id)
+    if not db_employer:
+        raise HTTPException(status_code=404, detail="Employer not found")
+    return db_employer
+
+@router.put("/{employer_id}", response_model=EmployerOut)
+def api_update_employer(
+    employer_id: int,
+    company_name: str = Form(...),
+    company_email: Optional[str] = Form(None),
+    company_contact: Optional[str] = Form(None),
+    company_address: Optional[str] = Form(None),
+    company_description: Optional[str] = Form(None),
+    company_website: Optional[str] = Form(None),
+    company_logo: UploadFile = File(None),
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(verify_access_token),
+):
+    employer = EmployerUpdate(
+        company_name=company_name,
+        company_email=company_email,
+        company_contact=company_contact,
+        company_address=company_address,
+        company_description=company_description,
+        company_website=company_website,
+    )
+    db_employer = update_employer(db, employer_id, employer, company_logo)
+    if not db_employer:
+        raise HTTPException(status_code=404, detail="Employer not found")
+    return db_employer
+
+@router.delete("/{employer_id}", response_model=EmployerOut)
+def api_delete_employer(employer_id: int, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
+    db_employer = delete_employer(db, employer_id)
+    if not db_employer:
+        raise HTTPException(status_code=404, detail="Employer not found")
+    return db_employer
+
+
+#get user profile employer by id
+@router.get("/profile/update", response_model=UserProfileEmployer)
+def get_employer_profile(db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
+    try:
+        db_employer = get_employer_profiles(db, current_user_id)
+    
+        if not db_employer:
+            raise HTTPException(status_code=404, detail="Employer not found")
+        return db_employer
+    except Exception as e:
+        raise HTTPException(status_code=404, detail="Employer not found")
+    
+
+@router.post("/profile/updates", response_model=UserResponse)
+async def update_profile(
+    request: Request,
+    user_name: str = Form(...),
+    gender: str = Form(None),
+    phone: str = Form(None),
+    date_of_birth: str = Form(None),
+    address: str = Form(None),
+    company_name: str = Form(None),
+    company_email: str = Form(None),
+    company_contact: str = Form(None),
+    company_address: str = Form(None),
+    company_description: str = Form(None),
+    company_website: str = Form(None),
+    category_ids: List[int] = Form([]),
+    company_logo: UploadFile = File(None),
+    remove_logo: bool = Form(False),
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(verify_access_token),
+):
+    user_data = UserUpdateProfile(
+        user_name=user_name,
+        gender=gender,
+        phone=phone,
+        date_of_birth=date_of_birth or None,
+        address=address, 
+    )
+
+    employer_data = EmployerUpdate(
+        company_name=company_name,
+        company_email=company_email,
+        company_contact=company_contact,
+        company_address=company_address,
+        company_description=company_description,
+        company_website=company_website,
+    )
+
+    ip_address = request.client.host
+
+    return update_profile_employer(db, user_data, employer_data, company_logo, remove_logo, category_ids, current_user_id, ip_address)
+
+@router.delete("/profile/company-logo")
+def delete_company_logo_endpoint(
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(verify_access_token),
+):
+    return delete_company_logo(db, current_user_id)
+
